@@ -1,0 +1,12 @@
+---
+- name: Configure Junos System Settings
+  junos_config:
+    lines: "{{ lookup('template', 'junos_sys_settings_config.j2').split('\n') }}"
+    comment: Create system settings
+  when: settings_remove == False
+
+- name: Remove Junos System Settings
+  junos_config:
+    lines: "{{ lookup('template', 'junos_sys_settings_remove.j2').split('\n') }}"
+    comment: Remove system settings
+  when: settings_remove == True

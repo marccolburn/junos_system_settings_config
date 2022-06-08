@@ -1,0 +1,61 @@
+set system host-name {{ inventory_hostname }}
+{% if system_services.ssh is defined %}
+{% if system_services.ssh.sftp is defined %}
+set system services ssh sftp-server
+{% endif %}
+{% endif %}
+{% if system_services.dns is defined %}
+{% if system_services.dns.proxy is defined %}
+{% for interface in system_services.dns.proxy.interfaces %}
+set system services dns dns-proxy interface {{ interface }}
+{% endfor %}
+{% endif %}
+{% if system_services.dns.default_domain is defined %}
+set system services dns dns-proxy default-domain * forwarders {{ system_services.dns.default_domain.forwarder }}
+{% endif %}
+{% endif %}
+{% if system_services.dhcp_local is defined %}
+delete system services dhcp-local-server
+delete access address-assignment
+{% for group in system_services.dhcp_local.groups %}
+set system services dhcp-local-server group {{ group.name }} interface {{ group.interface }}
+set access address-assignment pool {{ group.name }} family inet network {{ group.network }} 
+set access address-assignment pool {{ group.name }} family inet range junosRange low {{ group.range.low }}
+set access address-assignment pool {{ group.name }} family inet range junosRange high {{ group.range.high }}
+set access address-assignment pool {{ group.name }} family inet dhcp-attributes name-server {{ group.name_server }}
+set access address-assignment pool {{ group.name }} family inet dhcp-attributes router {{ group.default_gateway }}
+{% endfor %}
+{% endif %}
+{% if system_services.web_management is defined %}
+{% if system_services.web_management.http is defined %}
+{% for interface in system_services.web_management.http.interfaces %}
+set system services web-management http interface {{ interface }}
+{% endfor %}
+{% endif %}
+{% if system_services.web_management.https is defined %}
+{% for interface in system_services.web_management.https.interfaces %}
+set system services web-management https interface {{ interface }}
+{% endfor %}
+{% endif %}
+{% endif %}
+{% if system_services.dynamic_dns is defined %}
+set system services dynamic-dns client {{ system_services.dynamic_dns.client_name }} server {{ system_services.dynamic_dns.server }}
+set system services dynamic-dns client {{ system_services.dynamic_dns.client_name }} username {{ system_services.dynamic_dns.user }}
+set system services dynamic-dns client {{ system_services.dynamic_dns.client_name }} password {{ system_services.dynamic_dns.pass }}
+set system services dynamic-dns client {{ system_services.dynamic_dns.client_name }} interface {{ system_services.dynamic_dns.interface }}
+{% endif %}
+{% if system_settings is defined %}
+set system domain-name {{ system_settings.domain_name }}
+set system time-zone {{ system_settings.time_zone }}
+set system authentication-order {{ system_settings.auth_order }}
+{% for server in system_settings.name_servers %}
+set system name-server {{ server }}
+{% endfor %}
+{% for server in system_settings.ntp_servers %}
+{% if server.prefer == True %}
+set system ntp server {{ server.ip }} prefer
+{% else %}
+set system ntp server {{ server.ip }}
+{% endif %}
+{% endfor %}
+{% endif %}
